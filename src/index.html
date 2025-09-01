@@ -1,1 +1,1413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Rail Detection System - MediaPerformance</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #000;
+            color: #fff;
+            overflow: hidden;
+            height: 100vh;
+            perspective: 1000px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Cyberpunk Grid Background */
+        .cyber-grid {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px);
+            background-size: 50px 50px;
+            animation: grid-move 20s linear infinite;
+            opacity: 0.3;
+        }
+
+        @keyframes grid-move {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(50px, 50px); }
+        }
+
+        /* Main Container - 16:9 Aspect Ratio */
+        .main-wrapper {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            position: relative;
+        }
+
+        .presentation-container {
+            width: 100%;
+            max-width: calc(100vh * 16 / 9);
+            max-height: 100vh;
+            margin: 0 auto;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Content Area */
+        .content-area {
+            width: calc(100% - 120px); /* Leave space for side navigation */
+            height: calc(100% - 60px); /* Leave space for top bar */
+            position: relative;
+            margin: 30px 60px;
+        }
+
+        /* Slides */
+        .slide {
+            display: none;
+            width: 100%;
+            height: 100%;
+            padding: 40px 60px;
+            background: #000;
+            border: 2px solid #fff;
+            box-shadow: 
+                0 0 50px rgba(255,255,255,0.5),
+                inset 0 0 50px rgba(255,255,255,0.1);
+            transform-style: preserve-3d;
+            animation: slide-3d 0.5s ease-out;
+            overflow-y: auto;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        .slide.active {
+            display: block;
+        }
+
+        @keyframes slide-3d {
+            from {
+                transform: rotateY(-90deg) translateZ(-100px);
+                opacity: 0;
+            }
+            to {
+                transform: rotateY(0) translateZ(0);
+                opacity: 1;
+            }
+        }
+
+        /* Side Navigation - Vertical */
+        .side-nav {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            z-index: 100;
+        }
+
+        .nav-btn {
+            width: 40px;
+            height: 40px;
+            background: #000;
+            color: #fff;
+            border: 2px solid #fff;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .nav-btn:hover {
+            background: #fff;
+            color: #000;
+            transform: translateX(-5px);
+            box-shadow: -5px 0 20px rgba(255,255,255,0.5);
+        }
+
+        .nav-btn.active {
+            background: #fff;
+            color: #000;
+        }
+
+        /* Top Bar for Language and Progress */
+        .top-bar {
+            position: absolute;
+            top: 10px;
+            left: 60px;
+            right: 60px;
+            height: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .progress-bar {
+            flex: 1;
+            height: 4px;
+            background: rgba(255,255,255,0.1);
+            margin-right: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: #fff;
+            width: 20%;
+            transition: width 0.5s ease;
+            box-shadow: 0 0 10px rgba(255,255,255,0.8);
+        }
+
+        .lang-btn {
+            padding: 5px 15px;
+            background: #000;
+            color: #fff;
+            border: 2px solid #fff;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .lang-btn:hover {
+            background: #fff;
+            color: #000;
+        }
+
+        /* Pixel Mario - Top Left Corner */
+        .pixel-mario {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            width: 24px;
+            height: 24px;
+            image-rendering: pixelated;
+            animation: mario-float 3s ease-in-out infinite;
+            z-index: 101;
+        }
+
+        @keyframes mario-float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+
+        .pixel-mario::before {
+            content: '';
+            position: absolute;
+            width: 3px;
+            height: 3px;
+            background: #fff;
+            box-shadow: 
+                /* Hat */
+                6px 0 #fff, 9px 0 #fff, 12px 0 #fff, 15px 0 #fff,
+                3px 3px #fff, 6px 3px #fff, 9px 3px #fff, 12px 3px #fff, 15px 3px #fff, 18px 3px #fff,
+                /* Face */
+                6px 6px #fff, 9px 6px #000, 12px 6px #000, 15px 6px #fff,
+                6px 9px #000, 9px 9px #fff, 12px 9px #fff, 15px 9px #000,
+                /* Body */
+                3px 12px #fff, 6px 12px #fff, 9px 12px #fff, 12px 12px #fff, 15px 12px #fff, 18px 12px #fff,
+                /* Legs */
+                6px 15px #fff, 12px 15px #fff;
+        }
+
+        /* Typography */
+        h1 {
+            font-size: 2.2rem;
+            font-weight: 700;
+            margin-bottom: 25px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-shadow: 
+                2px 2px 0 #000,
+                -2px -2px 0 #000,
+                2px -2px 0 #000,
+                -2px 2px 0 #000;
+            background: #fff;
+            -webkit-background-clip: text;
+            padding: 8px 0;
+        }
+
+        h2 {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin: 20px 0 12px;
+            color: #fff;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        p, li {
+            font-size: 1rem;
+            line-height: 1.7;
+            margin-bottom: 12px;
+        }
+
+        ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        li {
+            position: relative;
+            padding-left: 20px;
+            margin-bottom: 8px;
+        }
+
+        li:before {
+            content: '▸';
+            position: absolute;
+            left: 0;
+            color: #fff;
+            font-size: 1.1rem;
+        }
+
+        /* Animated Metrics */
+        .metric {
+            display: inline-block;
+            font-weight: 700;
+            font-size: 1.1rem;
+            padding: 4px 12px;
+            background: #fff;
+            color: #000;
+            margin: 3px;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .metric:hover {
+            transform: scale(1.05) translateZ(20px);
+            box-shadow: 0 5px 20px rgba(255,255,255,0.5);
+        }
+
+        .metric.animated {
+            animation: pulse-metric 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse-metric {
+            0%, 100% { 
+                transform: scale(1);
+                box-shadow: 0 0 0 rgba(255,255,255,0.5);
+            }
+            50% { 
+                transform: scale(1.05);
+                box-shadow: 0 0 20px rgba(255,255,255,0.8);
+            }
+        }
+
+        /* Confusion Matrix */
+        .matrix {
+            display: inline-block;
+            border: 2px solid #fff;
+            margin: 15px 0;
+            background: #000;
+        }
+
+        .matrix td {
+            padding: 12px 20px;
+            border: 1px solid #fff;
+            text-align: center;
+            font-weight: 600;
+            font-size: 1rem;
+        }
+
+        .matrix .header {
+            background: #fff;
+            color: #000;
+        }
+
+        /* Pixel Coins */
+        .pixel-coin {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            animation: coin-rotate 2s linear infinite;
+        }
+
+        @keyframes coin-rotate {
+            0% { transform: rotateY(0); }
+            100% { transform: rotateY(360deg); }
+        }
+
+        .pixel-coin::before {
+            content: '';
+            position: absolute;
+            width: 3px;
+            height: 3px;
+            background: #fff;
+            box-shadow:
+                3px 0 #fff, 6px 0 #fff, 9px 0 #fff, 12px 0 #fff,
+                0 3px #fff, 3px 3px #000, 6px 3px #000, 9px 3px #000, 12px 3px #000, 15px 3px #fff,
+                0 6px #fff, 3px 6px #000, 6px 6px #fff, 9px 6px #fff, 12px 6px #000, 15px 6px #fff,
+                0 9px #fff, 3px 9px #000, 6px 9px #000, 9px 9px #000, 12px 9px #000, 15px 9px #fff,
+                3px 12px #fff, 6px 12px #fff, 9px 12px #fff, 12px 12px #fff;
+        }
+
+        /* Glitch Effect */
+        .glitch {
+            animation: glitch 3s infinite;
+        }
+
+        @keyframes glitch {
+            0%, 100% { text-shadow: 2px 2px 0 #fff, -2px -2px 0 #000; }
+            25% { text-shadow: -2px 2px 0 #fff, 2px -2px 0 #000; }
+            50% { text-shadow: 2px -2px 0 #fff, -2px 2px 0 #000; }
+            75% { text-shadow: -2px -2px 0 #fff, 2px 2px 0 #000; }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .content-area {
+                width: calc(100% - 60px);
+                margin: 30px 30px;
+            }
+            .slide {
+                padding: 30px;
+            }
+            h1 {
+                font-size: 1.6rem;
+            }
+            h2 {
+                font-size: 1.1rem;
+            }
+            p, li {
+                font-size: 0.9rem;
+            }
+            .side-nav {
+                right: 5px;
+            }
+            .nav-btn {
+                width: 35px;
+                height: 35px;
+                font-size: 0.8rem;
+            }
+        }
+
+        /* Custom Scrollbar */
+        .slide::-webkit-scrollbar {
+            width: 6px;
+        }
+        .slide::-webkit-scrollbar-track {
+            background: rgba(255,255,255,0.1);
+        }
+        .slide::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.5);
+            border-radius: 3px;
+        }
+        .slide::-webkit-scrollbar-thumb:hover {
+            background: rgba(255,255,255,0.7);
+        }
+
+        /* Lightning Effects */
+        .lightning-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            overflow: hidden;
+            z-index: 8;
+            display: none;
+        }
+
+        #slide0.active .lightning-container {
+            display: block;
+        }
+
+        .lightning {
+            position: absolute;
+            opacity: 0;
+            image-rendering: pixelated;
+            filter: brightness(2) contrast(1.5) drop-shadow(0 0 20px #5ff5a8) drop-shadow(0 0 30px rgba(255, 255, 255, 0.5));
+        }
+
+        .lightning-1 {
+            top: 10%;
+            left: 20%;
+            width: 8px;
+            height: 150px;
+            background: #5ff5a8;
+            border: 2px solid #fff;
+            transform: rotate(-15deg);
+            animation: lightning-strike-1 3s infinite;
+        }
+
+        .lightning-2 {
+            top: 15%;
+            right: 25%;
+            width: 10px;
+            height: 180px;
+            background: #4ce598;
+            border: 2px solid #fff;
+            transform: rotate(10deg);
+            animation: lightning-strike-2 3.5s infinite;
+            animation-delay: 1s;
+        }
+
+        .lightning-3 {
+            top: 5%;
+            left: 70%;
+            width: 8px;
+            height: 120px;
+            background: #36d97e;
+            border: 2px solid #fff;
+            transform: rotate(-5deg);
+            animation: lightning-strike-3 4s infinite;
+            animation-delay: 2s;
+        }
+
+        .lightning-4 {
+            top: 20%;
+            left: 40%;
+            width: 7px;
+            height: 100px;
+            background: #2ec973;
+            border: 2px solid #fff;
+            transform: rotate(20deg);
+            animation: lightning-strike-1 2.5s infinite;
+            animation-delay: 1.5s;
+        }
+
+        .lightning-5 {
+            top: 8%;
+            right: 40%;
+            width: 8px;
+            height: 140px;
+            background: #25b869;
+            border: 2px solid #fff;
+            transform: rotate(-10deg);
+            animation: lightning-strike-2 3s infinite;
+            animation-delay: 0.5s;
+        }
+
+        @keyframes lightning-strike-1 {
+            0%, 60% { opacity: 0; }
+            65% { opacity: 0.9; transform: rotate(-15deg) scaleY(1); }
+            70% { opacity: 1; transform: rotate(-15deg) scaleY(1.2); box-shadow: 0 0 80px #4ce598, 0 0 150px #5ff5a8, 0 0 200px rgba(255, 255, 255, 0.5); }
+            75% { opacity: 0.8; transform: rotate(-15deg) scaleY(0.8); }
+            80% { opacity: 1; transform: rotate(-15deg) scaleY(1.1); }
+            85% { opacity: 0.6; }
+            90% { opacity: 0.3; }
+            100% { opacity: 0; transform: rotate(-15deg) scaleY(1); }
+        }
+
+        @keyframes lightning-strike-2 {
+            0%, 55% { opacity: 0; }
+            60% { opacity: 0.8; transform: rotate(10deg) scaleY(1); }
+            65% { opacity: 1; transform: rotate(10deg) scaleY(1.3); box-shadow: 0 0 90px #36d97e, 0 0 160px #4ce598, 0 0 220px rgba(255, 255, 255, 0.4); }
+            70% { opacity: 0.7; transform: rotate(10deg) scaleY(0.9); }
+            75% { opacity: 0.9; transform: rotate(10deg) scaleY(1.15); }
+            80% { opacity: 0.5; }
+            85% { opacity: 0.2; }
+            100% { opacity: 0; transform: rotate(10deg) scaleY(1); }
+        }
+
+        @keyframes lightning-strike-3 {
+            0%, 50% { opacity: 0; }
+            55% { opacity: 0.9; transform: rotate(-5deg) scaleY(1); }
+            60% { opacity: 1; transform: rotate(-5deg) scaleY(1.4); box-shadow: 0 0 85px #2ec973, 0 0 170px #36d97e, 0 0 210px rgba(255, 255, 255, 0.4); }
+            65% { opacity: 0.8; transform: rotate(-5deg) scaleY(0.7); }
+            70% { opacity: 1; transform: rotate(-5deg) scaleY(1.2); }
+            75% { opacity: 0.6; }
+            80% { opacity: 0.3; }
+            100% { opacity: 0; transform: rotate(-5deg) scaleY(1); }
+        }
+
+        /* Lightning branches */
+        .lightning::before,
+        .lightning::after {
+            content: '';
+            position: absolute;
+            background: #5ff5a8;
+            border: 1px solid #fff;
+            opacity: 1;
+            filter: none;
+        }
+
+        .lightning-1::before {
+            top: 30%;
+            left: -8px;
+            width: 5px;
+            height: 30px;
+            transform: rotate(-35deg);
+        }
+
+        .lightning-2::after {
+            top: 50%;
+            right: -12px;
+            width: 6px;
+            height: 40px;
+            transform: rotate(30deg);
+        }
+
+        .lightning-3::before {
+            top: 40%;
+            left: -6px;
+            width: 5px;
+            height: 25px;
+            transform: rotate(-45deg);
+        }
+
+        .lightning-4::after {
+            top: 45%;
+            left: -10px;
+            width: 5px;
+            height: 35px;
+            transform: rotate(-25deg);
+        }
+
+        .lightning-5::before {
+            top: 35%;
+            right: -8px;
+            width: 5px;
+            height: 30px;
+            transform: rotate(40deg);
+        }
+
+        /* Flash effect for slide 0 */
+        #slide0.active::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            z-index: 1;
+            animation: ambient-flash 2.5s infinite;
+        }
+
+        @keyframes ambient-flash {
+            0%, 60% { background: transparent; }
+            65% { background: radial-gradient(ellipse at center, rgba(76, 233, 152, 0.6) 0%, transparent 50%); }
+            70% { background: radial-gradient(ellipse at center, rgba(95, 245, 168, 0.5) 0%, transparent 60%); }
+            75% { background: radial-gradient(ellipse at center, rgba(54, 217, 126, 0.55) 0%, transparent 70%); }
+            80% { background: transparent; }
+            100% { background: transparent; }
+        }
+
+        /* Company Logo */
+        .company-logo {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            z-index: 20;
+            opacity: 0.9;
+        }
+
+        .logo-icon {
+            width: 30px;
+            height: 30px;
+            animation: logo-rotate 10s linear infinite;
+            flex-shrink: 0;
+        }
+
+        @keyframes logo-rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .logo-pixels {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            filter: drop-shadow(0 0 8px rgba(76, 217, 100, 0.5));
+        }
+
+        .logo-pixel {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+        }
+
+        /* MediaPerformance Logo Pixel Art - Adjusted for smaller size */
+        .logo-pixel.p1 { background: #1a9658; top: 4px; left: 4px; }
+        .logo-pixel.p2 { background: #1a9658; top: 4px; left: 6px; }
+        .logo-pixel.p3 { background: #1a9658; top: 4px; left: 8px; }
+        .logo-pixel.p4 { background: #25b869; top: 4px; left: 10px; }
+        .logo-pixel.p5 { background: #25b869; top: 4px; left: 12px; }
+        
+        .logo-pixel.p6 { background: #1a9658; top: 6px; left: 2px; }
+        .logo-pixel.p7 { background: #22a863; top: 6px; left: 4px; }
+        .logo-pixel.p8 { background: #22a863; top: 6px; left: 6px; }
+        .logo-pixel.p9 { background: #2ec973; top: 6px; left: 8px; }
+        .logo-pixel.p10 { background: #2ec973; top: 6px; left: 10px; }
+        .logo-pixel.p11 { background: #36d97e; top: 6px; left: 12px; }
+        .logo-pixel.p12 { background: #25b869; top: 6px; left: 14px; }
+        
+        .logo-pixel.p13 { background: #1a9658; top: 8px; left: 2px; }
+        .logo-pixel.p14 { background: #22a863; top: 8px; left: 4px; }
+        .logo-pixel.p15 { background: #4ce598; top: 8px; left: 6px; }
+        .logo-pixel.p16 { background: #4ce598; top: 8px; left: 8px; }
+        .logo-pixel.p17 { background: #36d97e; top: 8px; left: 10px; }
+        .logo-pixel.p18 { background: #2ec973; top: 8px; left: 12px; }
+        .logo-pixel.p19 { background: #25b869; top: 8px; left: 14px; }
+        .logo-pixel.p20 { background: #1fb761; top: 8px; left: 16px; }
+        
+        .logo-pixel.p21 { background: #1a9658; top: 10px; left: 2px; }
+        .logo-pixel.p22 { background: #2ec973; top: 10px; left: 4px; }
+        .logo-pixel.p23 { background: #4ce598; top: 10px; left: 6px; }
+        .logo-pixel.p24 { background: #5ff5a8; top: 10px; left: 8px; }
+        .logo-pixel.p25 { background: #4ce598; top: 10px; left: 10px; }
+        .logo-pixel.p26 { background: #36d97e; top: 10px; left: 12px; }
+        .logo-pixel.p27 { background: #2ec973; top: 10px; left: 14px; }
+        .logo-pixel.p28 { background: #1fb761; top: 10px; left: 16px; }
+        .logo-pixel.p29 { background: #18a050; top: 10px; left: 18px; }
+        
+        .logo-pixel.p30 { background: #22a863; top: 12px; left: 4px; }
+        .logo-pixel.p31 { background: #36d97e; top: 12px; left: 6px; }
+        .logo-pixel.p32 { background: #4ce598; top: 12px; left: 8px; }
+        .logo-pixel.p33 { background: #4ce598; top: 12px; left: 10px; }
+        .logo-pixel.p34 { background: #36d97e; top: 12px; left: 12px; }
+        .logo-pixel.p35 { background: #25b869; top: 12px; left: 14px; }
+        .logo-pixel.p36 { background: #18a050; top: 12px; left: 16px; }
+        
+        .logo-pixel.p37 { background: #1a9658; top: 14px; left: 6px; }
+        .logo-pixel.p38 { background: #2ec973; top: 14px; left: 8px; }
+        .logo-pixel.p39 { background: #2ec973; top: 14px; left: 10px; }
+        .logo-pixel.p40 { background: #25b869; top: 14px; left: 12px; }
+        .logo-pixel.p41 { background: #1fb761; top: 14px; left: 14px; }
+        
+        .logo-pixel.p42 { background: #1a9658; top: 16px; left: 8px; }
+        .logo-pixel.p43 { background: #1a9658; top: 16px; left: 10px; }
+        .logo-pixel.p44 { background: #18a050; top: 16px; left: 12px; }
+
+        /* Logo Text */
+        .logo-text {
+            font-family: 'Courier New', monospace;
+            font-size: 10px;
+            font-weight: bold;
+            color: #fff;
+            text-transform: lowercase;
+            letter-spacing: 1px;
+            text-shadow: 
+                1px 1px 0 #000,
+                -1px -1px 0 #000,
+                1px -1px 0 #000,
+                -1px 1px 0 #000;
+            animation: text-glow 3s ease-in-out infinite;
+        }
+
+        @keyframes text-glow {
+            0%, 100% { 
+                text-shadow: 
+                    1px 1px 0 #000,
+                    -1px -1px 0 #000,
+                    1px -1px 0 #000,
+                    -1px 1px 0 #000,
+                    0 0 5px rgba(76, 217, 100, 0.3);
+            }
+            50% { 
+                text-shadow: 
+                    1px 1px 0 #000,
+                    -1px -1px 0 #000,
+                    1px -1px 0 #000,
+                    -1px 1px 0 #000,
+                    0 0 10px rgba(76, 217, 100, 0.6);
+            }
+        }
+
+        /* Logo hover effect */
+        .company-logo:hover .logo-icon {
+            filter: brightness(1.2);
+            animation-duration: 2s;
+        }
+
+        .company-logo:hover .logo-text {
+            color: #4ce598;
+        }
+
+        /* Link Button */
+        .link-button {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            padding: 10px 20px 10px 40px;
+            background: #000;
+            color: #fff;
+            border: 2px solid #fff;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .link-button:hover {
+            background: #fff;
+            color: #000;
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(255,255,255,0.4);
+        }
+
+        /* Pixel Star Icon */
+        .link-button::before {
+            content: '';
+            position: absolute;
+            left: 12px;
+            width: 3px;
+            height: 3px;
+            background: currentColor;
+            box-shadow:
+                /* Star pattern */
+                3px -6px currentColor,
+                -3px 0 currentColor, 3px 0 currentColor, 6px 0 currentColor, 9px 0 currentColor,
+                0 3px currentColor, 3px 3px currentColor, 6px 3px currentColor,
+                3px 6px currentColor,
+                3px 9px currentColor;
+            animation: star-twinkle 2s ease-in-out infinite;
+        }
+
+        @keyframes star-twinkle {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+    </style>
+</head>
+<body>
+    <div class="cyber-grid"></div>
+    
+    <div class="main-wrapper">
+        <div class="presentation-container">
+            <div class="pixel-mario"></div>
+            
+            <div class="top-bar">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressBar"></div>
+                </div>
+                <button class="lang-btn" onclick="toggleLanguage()">FR</button>
+            </div>
+            
+            <div class="content-area">
+                <!-- Slide 0 - Introduction -->
+                <div class="slide active" id="slide0">
+                    <!-- Lightning Effects -->
+                    <div class="lightning-container">
+                        <div class="lightning lightning-1"></div>
+                        <div class="lightning lightning-2"></div>
+                        <div class="lightning lightning-3"></div>
+                        <div class="lightning lightning-4"></div>
+                        <div class="lightning lightning-5"></div>
+                    </div>
+                    
+                    <div class="company-logo">
+                        <div class="logo-icon">
+                            <div class="logo-pixels">
+                                <div class="logo-pixel p1"></div>
+                                <div class="logo-pixel p2"></div>
+                                <div class="logo-pixel p3"></div>
+                                <div class="logo-pixel p4"></div>
+                                <div class="logo-pixel p5"></div>
+                                <div class="logo-pixel p6"></div>
+                                <div class="logo-pixel p7"></div>
+                                <div class="logo-pixel p8"></div>
+                                <div class="logo-pixel p9"></div>
+                                <div class="logo-pixel p10"></div>
+                                <div class="logo-pixel p11"></div>
+                                <div class="logo-pixel p12"></div>
+                                <div class="logo-pixel p13"></div>
+                                <div class="logo-pixel p14"></div>
+                                <div class="logo-pixel p15"></div>
+                                <div class="logo-pixel p16"></div>
+                                <div class="logo-pixel p17"></div>
+                                <div class="logo-pixel p18"></div>
+                                <div class="logo-pixel p19"></div>
+                                <div class="logo-pixel p20"></div>
+                                <div class="logo-pixel p21"></div>
+                                <div class="logo-pixel p22"></div>
+                                <div class="logo-pixel p23"></div>
+                                <div class="logo-pixel p24"></div>
+                                <div class="logo-pixel p25"></div>
+                                <div class="logo-pixel p26"></div>
+                                <div class="logo-pixel p27"></div>
+                                <div class="logo-pixel p28"></div>
+                                <div class="logo-pixel p29"></div>
+                                <div class="logo-pixel p30"></div>
+                                <div class="logo-pixel p31"></div>
+                                <div class="logo-pixel p32"></div>
+                                <div class="logo-pixel p33"></div>
+                                <div class="logo-pixel p34"></div>
+                                <div class="logo-pixel p35"></div>
+                                <div class="logo-pixel p36"></div>
+                                <div class="logo-pixel p37"></div>
+                                <div class="logo-pixel p38"></div>
+                                <div class="logo-pixel p39"></div>
+                                <div class="logo-pixel p40"></div>
+                                <div class="logo-pixel p41"></div>
+                                <div class="logo-pixel p42"></div>
+                                <div class="logo-pixel p43"></div>
+                                <div class="logo-pixel p44"></div>
+                            </div>
+                        </div>
+                        <span class="logo-text">mediaperformance</span>
+                    </div>
+                    
+                    <div style="width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: space-between; position: relative; padding-bottom: 80px; z-index: 10;">
+                        <!-- Score and Time Header -->
+                        <div style="position: absolute; top: 20px; left: 0; right: 0; display: flex; justify-content: space-around; font-family: 'Courier New', monospace; font-size: 1.1rem; font-weight: bold;">
+                            <span style="text-align: center;" data-en="DATA TEAM" data-fr="ÉQUIPE DATA">DATA TEAM<br><span class="metric" style="padding: 2px 8px;">000000</span></span>
+                            <span style="text-align: center;">
+                                <span class="pixel-coin" style="position: relative; display: inline-block; width: 16px; height: 16px; margin-right: 5px;"></span>x00
+                            </span>
+                            <span style="text-align: center;">WORLD<br>1-1</span>
+                            <span style="text-align: center;">TIME<br><span class="metric animated" style="padding: 2px 8px;">∞</span></span>
+                        </div>
+                        
+                        <!-- Main Content Container -->
+                        <div style="margin-top: 80px; width: 100%; display: flex; flex-direction: column; align-items: center;">
+                            <!-- Main Title Block -->
+                            <div style="background: #000; border: 8px solid #fff; padding: 30px 50px; text-align: center; box-shadow: 0 0 30px rgba(255,255,255,0.5); transform: perspective(500px) rotateX(5deg); margin-bottom: 30px;">
+                                <h1 style="font-family: 'Courier New', monospace; font-size: 2.2rem; font-weight: bold; margin-bottom: 15px; letter-spacing: 3px; text-shadow: 3px 3px 0 rgba(255,255,255,0.3);"
+                                    data-en="AI RAIL DETECTION" 
+                                    data-fr="DÉTECTION DE RAILS IA">AI RAIL DETECTION</h1>
+                                <h1 style="font-family: 'Courier New', monospace; font-size: 2.2rem; font-weight: bold; margin-bottom: 20px; letter-spacing: 3px; text-shadow: 3px 3px 0 rgba(255,255,255,0.3);"
+                                    data-en="SYSTEM" 
+                                    data-fr="SYSTÈME">SYSTEM</h1>
+                                
+                                <p style="font-size: 0.9rem; margin-bottom: 5px; opacity: 0.8;">©2025 MEDIAPERFORMANCE</p>
+                            </div>
+                            
+                            <!-- Credits Section -->
+                            <div style="text-align: center; font-family: 'Courier New', monospace; margin-bottom: 20px;">
+                                <div style="margin-bottom: 20px;">
+                                    <p style="font-size: 1rem; margin-bottom: 12px; color: #fff;">
+                                        <span class="metric" style="padding: 3px 8px; margin: 0 5px;">★</span>
+                                        <span data-en="PROJECT DIRECTOR" data-fr="DIRECTEUR DE PROJET">PROJECT DIRECTOR</span>
+                                        <span class="metric" style="padding: 3px 8px; margin: 0 5px;">★</span>
+                                    </p>
+                                    <p style="font-size: 1.3rem; font-weight: bold; margin-bottom: 5px; text-transform: uppercase;">ARNAUD QUIRIN</p>
+                                    <p style="font-size: 0.9rem; opacity: 0.9; text-transform: uppercase; margin-bottom: 20px;" 
+                                       data-en="LEAD DATA SCIENTIST" 
+                                       data-fr="LEAD DATA SCIENTIST">LEAD DATA SCIENTIST</p>
+                                    
+                                    <!-- Pixel block separator -->
+                                    <div style="width: 100%; height: 30px; background: repeating-linear-gradient(90deg, #fff 0px, #fff 4px, #000 4px, #000 8px); opacity: 0.3; margin: 20px 0;"></div>
+                                </div>
+                                
+                                <div style="margin-bottom: 25px; margin-top: 25px;">
+                                    <p style="font-size: 1rem; margin-bottom: 12px; color: #fff;">
+                                        <span class="metric" style="padding: 3px 8px; margin: 0 5px;">★</span>
+                                        <span data-en="DEVELOPER" data-fr="DÉVELOPPEUR">DEVELOPER</span>
+                                        <span class="metric" style="padding: 3px 8px; margin: 0 5px;">★</span>
+                                    </p>
+                                    <p style="font-size: 1.3rem; font-weight: bold; margin-bottom: 5px; text-transform: uppercase;">SAMEER MOHAMMAD</p>
+                                    <p style="font-size: 0.9rem; opacity: 0.9; text-transform: uppercase;" 
+                                       data-en="COMPUTER VISION ENGINEER" 
+                                       data-fr="INGÉNIEUR VISION PAR ORDINATEUR">COMPUTER VISION ENGINEER</p>
+                                </div>
+                                
+                                <!-- Game Options -->
+                                <div style="margin-top: 20px;">
+                                    <p class="metric animated" style="display: inline-block; padding: 8px 20px; font-size: 1.1rem; cursor: pointer;"
+                                       onclick="showSlide(1)"
+                                       data-en="► 1 PLAYER GAME" 
+                                       data-fr="► 1 JOUEUR">► 1 PLAYER GAME</p>
+                                </div>
+                                
+                                <p style="margin-top: 15px; font-size: 0.8rem; opacity: 0.6;"
+                                   data-en="PRESS ENTER OR CLICK TO START" 
+                                   data-fr="APPUYEZ SUR ENTRÉE OU CLIQUEZ POUR COMMENCER">PRESS ENTER OR CLICK TO START</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Bottom decoration - pixel ground (removed from here) -->
+                    </div>
+                </div>
+                
+                <!-- Slide 1 -->
+                <div class="slide" id="slide1">
+                    <div class="pixel-coin" style="top: 40px; right: 40px;"></div>
+                    <div class="company-logo">
+                        <div class="logo-icon">
+                            <div class="logo-pixels">
+                                <div class="logo-pixel p1"></div>
+                                <div class="logo-pixel p2"></div>
+                                <div class="logo-pixel p3"></div>
+                                <div class="logo-pixel p4"></div>
+                                <div class="logo-pixel p5"></div>
+                                <div class="logo-pixel p6"></div>
+                                <div class="logo-pixel p7"></div>
+                                <div class="logo-pixel p8"></div>
+                                <div class="logo-pixel p9"></div>
+                                <div class="logo-pixel p10"></div>
+                                <div class="logo-pixel p11"></div>
+                                <div class="logo-pixel p12"></div>
+                                <div class="logo-pixel p13"></div>
+                                <div class="logo-pixel p14"></div>
+                                <div class="logo-pixel p15"></div>
+                                <div class="logo-pixel p16"></div>
+                                <div class="logo-pixel p17"></div>
+                                <div class="logo-pixel p18"></div>
+                                <div class="logo-pixel p19"></div>
+                                <div class="logo-pixel p20"></div>
+                                <div class="logo-pixel p21"></div>
+                                <div class="logo-pixel p22"></div>
+                                <div class="logo-pixel p23"></div>
+                                <div class="logo-pixel p24"></div>
+                                <div class="logo-pixel p25"></div>
+                                <div class="logo-pixel p26"></div>
+                                <div class="logo-pixel p27"></div>
+                                <div class="logo-pixel p28"></div>
+                                <div class="logo-pixel p29"></div>
+                                <div class="logo-pixel p30"></div>
+                                <div class="logo-pixel p31"></div>
+                                <div class="logo-pixel p32"></div>
+                                <div class="logo-pixel p33"></div>
+                                <div class="logo-pixel p34"></div>
+                                <div class="logo-pixel p35"></div>
+                                <div class="logo-pixel p36"></div>
+                                <div class="logo-pixel p37"></div>
+                                <div class="logo-pixel p38"></div>
+                                <div class="logo-pixel p39"></div>
+                                <div class="logo-pixel p40"></div>
+                                <div class="logo-pixel p41"></div>
+                                <div class="logo-pixel p42"></div>
+                                <div class="logo-pixel p43"></div>
+                                <div class="logo-pixel p44"></div>
+                            </div>
+                        </div>
+                        <span class="logo-text">mediaperformance</span>
+                    </div>
+                    <h1 class="glitch" data-en="THE PROBLEM EXPLAINED" data-fr="LE PROBLÈME EXPLIQUÉ">THE PROBLEM EXPLAINED</h1>
+                    
+                    <h2 data-en="WHAT WE'RE SOLVING:" data-fr="CE QUE NOUS RÉSOLVONS:">WHAT WE'RE SOLVING:</h2>
+                    <ul>
+                        <li data-en="MediaPerformance sells clips for store shelf rails" data-fr="MediaPerformance vend des clips pour rails d'étagères">MediaPerformance sells clips for store shelf rails</li>
+                        <li data-en="Need to know: Which stores have compatible rail systems?" data-fr="Besoin de savoir: Quels magasins ont des systèmes compatibles?">Need to know: Which stores have compatible rail systems?</li>
+                        <li data-en="Current method: Manual visits (30 min per store)" data-fr="Méthode actuelle: Visites manuelles (30 min par magasin)">Current method: Manual visits (30 min per store)</li>
+                    </ul>
+                    
+                    <h2 data-en="THE CHALLENGE:" data-fr="LE DÉFI:">THE CHALLENGE:</h2>
+                    <ul>
+                        <li><span class="metric animated" data-en="1000+ stores" data-fr="1000+ magasins">1000+ stores</span> <span data-en="to check" data-fr="à vérifier">to check</span></li>
+                        <li><span class="metric animated" data-en="500+ hours" data-fr="500+ heures">500+ hours</span> <span data-en="needed (3 months work)" data-fr="nécessaires (3 mois de travail)">needed (3 months work)</span></li>
+                    </ul>
+                    
+                    <h2 data-en="OUR AI SOLUTION:" data-fr="NOTRE SOLUTION IA:">OUR AI SOLUTION:</h2>
+                    <ul>
+                        <li data-en="Computer vision system analyzes shelf photos" data-fr="Système de vision par ordinateur analyse les photos d'étagères">Computer vision system analyzes shelf photos</li>
+                        <li data-en='Outputs: "Compatible" or "Not Compatible"' data-fr='Sorties: "Compatible" ou "Non Compatible"'>Outputs: "Compatible" or "Not Compatible"</li>
+                        <li data-en="Dataset: 420 balanced images (210 each class)" data-fr="Dataset: 420 images équilibrées (210 par classe)">Dataset: <span class="metric">420 balanced images</span> (210 each class)</li>
+                    </ul>
+                </div>
+                
+                <!-- Slide 2 -->
+                <div class="slide" id="slide2">
+                    <div class="company-logo">
+                        <div class="logo-icon">
+                            <div class="logo-pixels">
+                                <div class="logo-pixel p1"></div>
+                                <div class="logo-pixel p2"></div>
+                                <div class="logo-pixel p3"></div>
+                                <div class="logo-pixel p4"></div>
+                                <div class="logo-pixel p5"></div>
+                                <div class="logo-pixel p6"></div>
+                                <div class="logo-pixel p7"></div>
+                                <div class="logo-pixel p8"></div>
+                                <div class="logo-pixel p9"></div>
+                                <div class="logo-pixel p10"></div>
+                                <div class="logo-pixel p11"></div>
+                                <div class="logo-pixel p12"></div>
+                                <div class="logo-pixel p13"></div>
+                                <div class="logo-pixel p14"></div>
+                                <div class="logo-pixel p15"></div>
+                                <div class="logo-pixel p16"></div>
+                                <div class="logo-pixel p17"></div>
+                                <div class="logo-pixel p18"></div>
+                                <div class="logo-pixel p19"></div>
+                                <div class="logo-pixel p20"></div>
+                                <div class="logo-pixel p21"></div>
+                                <div class="logo-pixel p22"></div>
+                                <div class="logo-pixel p23"></div>
+                                <div class="logo-pixel p24"></div>
+                                <div class="logo-pixel p25"></div>
+                                <div class="logo-pixel p26"></div>
+                                <div class="logo-pixel p27"></div>
+                                <div class="logo-pixel p28"></div>
+                                <div class="logo-pixel p29"></div>
+                                <div class="logo-pixel p30"></div>
+                                <div class="logo-pixel p31"></div>
+                                <div class="logo-pixel p32"></div>
+                                <div class="logo-pixel p33"></div>
+                                <div class="logo-pixel p34"></div>
+                                <div class="logo-pixel p35"></div>
+                                <div class="logo-pixel p36"></div>
+                                <div class="logo-pixel p37"></div>
+                                <div class="logo-pixel p38"></div>
+                                <div class="logo-pixel p39"></div>
+                                <div class="logo-pixel p40"></div>
+                                <div class="logo-pixel p41"></div>
+                                <div class="logo-pixel p42"></div>
+                                <div class="logo-pixel p43"></div>
+                                <div class="logo-pixel p44"></div>
+                            </div>
+                        </div>
+                        <span class="logo-text">mediaperformance</span>
+                    </div>
+                    <h1 class="glitch" data-en="PERFORMANCE METRICS" data-fr="MÉTRIQUES DE PERFORMANCE">PERFORMANCE METRICS</h1>
+                    
+                    <h2 data-en="KEY ACHIEVEMENT:" data-fr="RÉALISATION CLÉ:">KEY ACHIEVEMENT:</h2>
+                    <ul>
+                        <li>✓ <span class="metric animated" data-en="88.89%" data-fr="88,89%">88.89%</span> <span data-en="Compatible Rail Detection (40 out of 45)" data-fr="Détection de Rails Compatibles (40 sur 45)">Compatible Rail Detection (40 out of 45)</span></li>
+                        <li>✓ <span class="metric animated" data-en="68.89%" data-fr="68,89%">68.89%</span> <span data-en="Overall Accuracy" data-fr="Précision Globale">Overall Accuracy</span></li>
+                    </ul>
+                    
+                    <h2 data-en="CONFUSION MATRIX BREAKDOWN:" data-fr="MATRICE DE CONFUSION:">CONFUSION MATRIX BREAKDOWN:</h2>
+                    <table class="matrix">
+                        <tr>
+                            <td class="header"></td>
+                            <td class="header" data-en="Predicted YES" data-fr="Prédit OUI">Predicted YES</td>
+                            <td class="header" data-en="Predicted NO" data-fr="Prédit NON">Predicted NO</td>
+                        </tr>
+                        <tr>
+                            <td class="header" data-en="Actual YES" data-fr="Réel OUI">Actual YES</td>
+                            <td class="metric animated">40</td>
+                            <td>5</td>
+                        </tr>
+                        <tr>
+                            <td class="header" data-en="Actual NO" data-fr="Réel NON">Actual NO</td>
+                            <td>23</td>
+                            <td class="metric animated">22</td>
+                        </tr>
+                    </table>
+                    
+                    <h2 data-en="WHAT THIS MEANS:" data-fr="CE QUE CELA SIGNIFIE:">WHAT THIS MEANS:</h2>
+                    <ul>
+                        <li data-en="Catches 9 out of 10 sales opportunities" data-fr="Capture 9 opportunités de vente sur 10">Catches <span class="metric">9 out of 10</span> sales opportunities</li>
+                        <li data-en="23 false positives (will verify manually)" data-fr="23 faux positifs (vérification manuelle)">23 false positives (will verify manually)</li>
+                        <li data-en="Balanced dataset improved performance" data-fr="Dataset équilibré améliore la performance">Balanced dataset improved performance</li>
+                    </ul>
+                </div>
+                
+                <!-- Slide 3 -->
+                <div class="slide" id="slide3">
+                    <div class="pixel-coin" style="bottom: 40px; left: 40px;"></div>
+                    <div class="company-logo">
+                        <div class="logo-icon">
+                            <div class="logo-pixels">
+                                <div class="logo-pixel p1"></div>
+                                <div class="logo-pixel p2"></div>
+                                <div class="logo-pixel p3"></div>
+                                <div class="logo-pixel p4"></div>
+                                <div class="logo-pixel p5"></div>
+                                <div class="logo-pixel p6"></div>
+                                <div class="logo-pixel p7"></div>
+                                <div class="logo-pixel p8"></div>
+                                <div class="logo-pixel p9"></div>
+                                <div class="logo-pixel p10"></div>
+                                <div class="logo-pixel p11"></div>
+                                <div class="logo-pixel p12"></div>
+                                <div class="logo-pixel p13"></div>
+                                <div class="logo-pixel p14"></div>
+                                <div class="logo-pixel p15"></div>
+                                <div class="logo-pixel p16"></div>
+                                <div class="logo-pixel p17"></div>
+                                <div class="logo-pixel p18"></div>
+                                <div class="logo-pixel p19"></div>
+                                <div class="logo-pixel p20"></div>
+                                <div class="logo-pixel p21"></div>
+                                <div class="logo-pixel p22"></div>
+                                <div class="logo-pixel p23"></div>
+                                <div class="logo-pixel p24"></div>
+                                <div class="logo-pixel p25"></div>
+                                <div class="logo-pixel p26"></div>
+                                <div class="logo-pixel p27"></div>
+                                <div class="logo-pixel p28"></div>
+                                <div class="logo-pixel p29"></div>
+                                <div class="logo-pixel p30"></div>
+                                <div class="logo-pixel p31"></div>
+                                <div class="logo-pixel p32"></div>
+                                <div class="logo-pixel p33"></div>
+                                <div class="logo-pixel p34"></div>
+                                <div class="logo-pixel p35"></div>
+                                <div class="logo-pixel p36"></div>
+                                <div class="logo-pixel p37"></div>
+                                <div class="logo-pixel p38"></div>
+                                <div class="logo-pixel p39"></div>
+                                <div class="logo-pixel p40"></div>
+                                <div class="logo-pixel p41"></div>
+                                <div class="logo-pixel p42"></div>
+                                <div class="logo-pixel p43"></div>
+                                <div class="logo-pixel p44"></div>
+                            </div>
+                        </div>
+                        <span class="logo-text">mediaperformance</span>
+                    </div>
+                    <h1 class="glitch" data-en="BUSINESS IMPACT" data-fr="IMPACT COMMERCIAL">BUSINESS IMPACT</h1>
+                    
+                    <h2 data-en="TIME SAVINGS:" data-fr="ÉCONOMIES DE TEMPS:">TIME SAVINGS:</h2>
+                    <ul>
+                        <li data-en="Manual: 100 stores = 50 hours" data-fr="Manuel: 100 magasins = 50 heures">Manual: 100 stores = <span class="metric">50 hours</span></li>
+                        <li data-en="AI + Verification: 100 stores = 3.3 hours total" data-fr="IA + Vérification: 100 magasins = 3,3 heures total">AI + Verification: 100 stores = <span class="metric animated">3.3 hours</span> total</li>
+                        <li data-en="Efficiency Gain: 93% faster" data-fr="Gain d'efficacité: 93% plus rapide">Efficiency Gain: <span class="metric animated">93% faster</span></li>
+                    </ul>
+                    
+                    <h2 data-en="CONFIDENCE METRICS:" data-fr="MÉTRIQUES DE CONFIANCE:">CONFIDENCE METRICS:</h2>
+                    <ul>
+                        <li data-en="Correct predictions: 86% average confidence" data-fr="Prédictions correctes: 86% de confiance moyenne">Correct predictions: <span class="metric">86%</span> average confidence</li>
+                        <li data-en="Wrong predictions: 70% average confidence" data-fr="Prédictions incorrectes: 70% de confiance moyenne">Wrong predictions: <span class="metric">70%</span> average confidence</li>
+                        <li data-en="Can detect uncertainty for manual review" data-fr="Peut détecter l'incertitude pour révision manuelle">Can detect uncertainty for manual review</li>
+                    </ul>
+                </div>
+                
+                <!-- Slide 4 -->
+                <div class="slide" id="slide4">
+                    <div class="company-logo">
+                        <div class="logo-icon">
+                            <div class="logo-pixels">
+                                <div class="logo-pixel p1"></div>
+                                <div class="logo-pixel p2"></div>
+                                <div class="logo-pixel p3"></div>
+                                <div class="logo-pixel p4"></div>
+                                <div class="logo-pixel p5"></div>
+                                <div class="logo-pixel p6"></div>
+                                <div class="logo-pixel p7"></div>
+                                <div class="logo-pixel p8"></div>
+                                <div class="logo-pixel p9"></div>
+                                <div class="logo-pixel p10"></div>
+                                <div class="logo-pixel p11"></div>
+                                <div class="logo-pixel p12"></div>
+                                <div class="logo-pixel p13"></div>
+                                <div class="logo-pixel p14"></div>
+                                <div class="logo-pixel p15"></div>
+                                <div class="logo-pixel p16"></div>
+                                <div class="logo-pixel p17"></div>
+                                <div class="logo-pixel p18"></div>
+                                <div class="logo-pixel p19"></div>
+                                <div class="logo-pixel p20"></div>
+                                <div class="logo-pixel p21"></div>
+                                <div class="logo-pixel p22"></div>
+                                <div class="logo-pixel p23"></div>
+                                <div class="logo-pixel p24"></div>
+                                <div class="logo-pixel p25"></div>
+                                <div class="logo-pixel p26"></div>
+                                <div class="logo-pixel p27"></div>
+                                <div class="logo-pixel p28"></div>
+                                <div class="logo-pixel p29"></div>
+                                <div class="logo-pixel p30"></div>
+                                <div class="logo-pixel p31"></div>
+                                <div class="logo-pixel p32"></div>
+                                <div class="logo-pixel p33"></div>
+                                <div class="logo-pixel p34"></div>
+                                <div class="logo-pixel p35"></div>
+                                <div class="logo-pixel p36"></div>
+                                <div class="logo-pixel p37"></div>
+                                <div class="logo-pixel p38"></div>
+                                <div class="logo-pixel p39"></div>
+                                <div class="logo-pixel p40"></div>
+                                <div class="logo-pixel p41"></div>
+                                <div class="logo-pixel p42"></div>
+                                <div class="logo-pixel p43"></div>
+                                <div class="logo-pixel p44"></div>
+                            </div>
+                        </div>
+                        <span class="logo-text">mediaperformance</span>
+                    </div>
+                    <h1 class="glitch" data-en="DEPLOYMENT PLAN" data-fr="PLAN DE DÉPLOIEMENT">DEPLOYMENT PLAN</h1>
+                    
+                    <h2 data-en="WEEK 1-2 (IMMEDIATE):" data-fr="SEMAINE 1-2 (IMMÉDIAT):">WEEK 1-2 (IMMEDIATE):</h2>
+                    <ul>
+                        <li data-en="Deploy as screening tool" data-fr="Déployer comme outil de filtrage">Deploy as screening tool</li>
+                        <li data-en="Human validates 'compatible' results" data-fr="Validation humaine des résultats 'compatibles'">Human validates "compatible" results</li>
+                        <li data-en="Test on 50 real stores" data-fr="Test sur 50 vrais magasins">Test on <span class="metric">50 real stores</span></li>
+                    </ul>
+                    
+                    <h2 data-en="MONTH 1:" data-fr="MOIS 1:">MONTH 1:</h2>
+                    <ul>
+                        <li data-en="Collect edge cases from errors" data-fr="Collecter les cas limites des erreurs">Collect edge cases from errors</li>
+                        <li data-en="Add 300+ difficult examples" data-fr="Ajouter 300+ exemples difficiles">Add <span class="metric">300+ difficult examples</span></li>
+                        <li data-en="Fine-tune model" data-fr="Affiner le modèle">Fine-tune model</li>
+                    </ul>
+                    
+                    <h2 data-en="MONTH 2:" data-fr="MOIS 2:">MONTH 2:</h2>
+                    <ul>
+                        <li data-en="Target 80%+ accuracy" data-fr="Viser 80%+ de précision">Target <span class="metric animated">80%+ accuracy</span></li>
+                        <li data-en="Reduce false positives to <15%" data-fr="Réduire les faux positifs à <15%">Reduce false positives to <span class="metric"><15%</span></li>
+                        <li data-en="Wider deployment" data-fr="Déploiement plus large">Wider deployment</li>
+                    </ul>
+                    
+                    <h2 data-en="MONTH 3:" data-fr="MOIS 3:">MONTH 3:</h2>
+                    <ul>
+                        <li data-en="Full automation assessment" data-fr="Évaluation de l'automatisation complète">Full automation assessment</li>
+                        <li data-en="Scale to all 1000+ stores" data-fr="Étendre à tous les 1000+ magasins">Scale to all <span class="metric animated">1000+ stores</span></li>
+                        <li data-en="Full efficiency gains realized" data-fr="Gains d'efficacité complets réalisés">Full efficiency gains realized</li>
+                    </ul>
+                    
+                    <h2 data-en="CURRENT STATUS:" data-fr="STATUT ACTUEL:">CURRENT STATUS:</h2>
+                    <ul>
+                        <li>✓ <span data-en="Balanced dataset (420 images)" data-fr="Dataset équilibré (420 images)">Balanced dataset (420 images)</span></li>
+                        <li>✓ <span data-en="88.89% opportunity detection" data-fr="88,89% de détection d'opportunités">88.89% opportunity detection</span></li>
+                        <li>✓ <span data-en="Ready for pilot deployment" data-fr="Prêt pour le déploiement pilote">Ready for pilot deployment</span></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="side-nav">
+                <button class="nav-btn" onclick="showSlide(0)">0</button>
+                <button class="nav-btn" onclick="showSlide(1)">1</button>
+                <button class="nav-btn" onclick="showSlide(2)">2</button>
+                <button class="nav-btn" onclick="showSlide(3)">3</button>
+                <button class="nav-btn" onclick="showSlide(4)">4</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Custom Link Button -->
+    <a href="https://github.com/mfsam1402/RailProject/blob/main/README.md" target="_blank" class="link-button" data-en="Learn More" data-fr="En Savoir Plus">Learn More</a>
+    
+    <script>
+        let currentSlide = 0;
+        let currentLang = 'en';
+        const totalSlides = 5;
+        
+        function showSlide(n) {
+            const slides = document.querySelectorAll('.slide');
+            const navBtns = document.querySelectorAll('.nav-btn');
+            
+            if (n >= totalSlides) currentSlide = 0;
+            if (n < 0) currentSlide = totalSlides - 1;
+            else currentSlide = n;
+            
+            slides.forEach(slide => slide.classList.remove('active'));
+            navBtns.forEach(btn => btn.classList.remove('active'));
+            
+            document.getElementById(`slide${currentSlide}`).classList.add('active');
+            navBtns[currentSlide].classList.add('active');
+            
+            // Update progress bar
+            const progress = ((currentSlide + 1) / totalSlides) * 100;
+            document.getElementById('progressBar').style.width = progress + '%';
+            
+            // Add animation to metrics when slide changes
+            setTimeout(() => {
+                const metrics = document.querySelectorAll(`#slide${currentSlide} .metric`);
+                metrics.forEach((metric, index) => {
+                    setTimeout(() => {
+                        metric.style.animation = 'none';
+                        void metric.offsetWidth; // Trigger reflow
+                        metric.style.animation = 'pulse-metric 2s ease-in-out';
+                    }, index * 200);
+                });
+            }, 100);
+        }
+        
+        function nextSlide() {
+            showSlide(currentSlide + 1);
+        }
+        
+        function previousSlide() {
+            showSlide(currentSlide - 1);
+        }
+        
+        function toggleLanguage() {
+            currentLang = currentLang === 'en' ? 'fr' : 'en';
+            const langBtn = document.querySelector('.lang-btn');
+            langBtn.textContent = currentLang === 'en' ? 'FR' : 'EN';
+            
+            // Update all elements with language data
+            document.querySelectorAll('[data-en]').forEach(el => {
+                if (el.hasAttribute(`data-${currentLang}`)) {
+                    if (el.tagName === 'A') {
+                        // For anchor tags, preserve the href
+                        el.textContent = el.getAttribute(`data-${currentLang}`);
+                    } else {
+                        el.textContent = el.getAttribute(`data-${currentLang}`);
+                    }
+                }
+            });
+        }
+        
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === 'ArrowDown') nextSlide();
+            else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') previousSlide();
+            else if (e.key >= '0' && e.key <= '4') showSlide(parseInt(e.key));
+            else if (e.key === 'Enter' && currentSlide === 0) showSlide(1);
+        });
+        
+        // Touch/swipe support for mobile
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let touchEndX = 0;
+        let touchEndY = 0;
+        
+        document.addEventListener('touchstart', (e) => {
+            touchStartX = e.changedTouches[0].screenX;
+            touchStartY = e.changedTouches[0].screenY;
+        });
+        
+        document.addEventListener('touchend', (e) => {
+            touchEndX = e.changedTouches[0].screenX;
+            touchEndY = e.changedTouches[0].screenY;
+            handleSwipe();
+        });
+        
+        function handleSwipe() {
+            const xDiff = touchEndX - touchStartX;
+            const yDiff = touchEndY - touchStartY;
+            
+            if (Math.abs(xDiff) > Math.abs(yDiff)) {
+                if (xDiff < -50) nextSlide();
+                if (xDiff > 50) previousSlide();
+            } else {
+                if (yDiff < -50) nextSlide();
+                if (yDiff > 50) previousSlide();
+            }
+        }
+        
+        // Add floating pixel coins randomly
+        setInterval(() => {
+            if (Math.random() > 0.8) {
+                const coin = document.createElement('div');
+                coin.className = 'pixel-coin';
+                coin.style.position = 'fixed';
+                coin.style.left = Math.random() * window.innerWidth + 'px';
+                coin.style.top = '-30px';
+                coin.style.zIndex = '50';
+                coin.style.animation = 'coin-fall 5s linear';
+                document.body.appendChild(coin);
+                
+                setTimeout(() => coin.remove(), 5000);
+            }
+        }, 4000);
+        
+        // Coin falling animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes coin-fall {
+                to {
+                    transform: translateY(${window.innerHeight + 50}px) rotateY(720deg);
+                }
+            }
+        `;
+        document.head.appendChild(style);
+        
+        // Initialize first slide
+        showSlide(0);
+    </script>
+</body>
+</html>
